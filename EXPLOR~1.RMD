@@ -1,0 +1,142 @@
+---
+title: "Exploring the Correlation between Alcohol Consumption Frequency and the Incidence of Major Depression in Adult Populations: Insights from the 2015 National Survey on Drug Use and Health"
+author: "Lauren Haines"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: 
+    toc: false
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(haven)
+library(kableExtra)
+library(stargazer)
+library(ggplot2)
+library(skimr)
+
+my_skim <- skim_with(base = sfl(Observations = length),
+                     numeric = sfl(missing = ~ sum(is.na(.))),
+                     factor = sfl(missing = ~ sum(is.na(.))))
+
+# File path
+data <- read_dta("C:\\Users\\lahaines\\OneDrive - University of North Carolina at Chapel Hill\\Desktop\\PLCY 460\\PLCY-460-Project\\nsduh2015.dta\\nsduh2015.dta")
+
+# Filter by data availability and age
+data <- data %>% filter(!is.na(aldaypyr))
+data <- data %>% filter(aldaypyr <= 365)
+data <- data %>% filter(!is.na(amdeyr))
+data <- data %>% filter(!is.na(wrknjbpyr))
+data <- data %>% filter(catag6 != 1 & catag6 != 6)
+
+# Recode outcome to binary variable; rename
+data$Depression <- ifelse(data$amdeyr == 2, 0, 1)
+
+# Rename predictor
+data$Alcohol_Consumption_Frequency <- data$aldaypyr
+
+# Recode controls to binary variables; rename
+data$Sex <- ifelse(data$irsex == 2, 0, 1)
+data$Race <- ifelse(data$newrace2 == 1, 1, 0)
+data$Education <- ifelse(data$ireduhighst2 == 11, 1, 0)
+data$Marital_Status <- ifelse(data$irmaritstat == 1, 1, 0)
+data$Employment <- ifelse(data$wrknjbpyr == 2, 0, 1)
+
+```
+
+# 1. Introduction
+
+Depression is a pervasive mental health condition that affects millions of individuals worldwide. It is characterized by persistent and debilitating feelings of sadness, hopelessness, and diminished interest in once-pleasurable activities. The World Health Organization estimates that over 300 million people globally suffer from depression, making it a leading cause of disability.^[“‘Depression: Let’s Talk’ Says WHO, as Depression Tops List of Causes of Ill Health.” World Health Organization, 2017. https://www.who.int/news/item/30-03-2017--depression-let-s-talk-says-who-as-depression-tops-list-of-causes-of-ill-health.] Additionally, The burden of depression extends beyond the individual, encompassing adverse effects on personal relationships and work productivity.^[Hirschfeld, R.M., S.A. Montgomery, M.B. Keller, S. Kasper, A.F. Schatzberg, H.J. Möller, D. Healy, et al. “Social Functioning in Depression: A Review.” J. Clin. Psychiatry 61, no.4 (2000): 268–75. https://doi.org/10.4088/jcp.v61n0405.]
+
+Alcohol consumption is commonly associated with depression, as individuals may turn to alcohol to alleviate or escape their distressing emotional state.^[Schuckit, M.A. “Alcohol, Anxiety, and Depressive Disorders.” Alcohol Health Res. World 20, no. 2 (1996): 81–85. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6876499/.] While alcohol may provide short-term relief, long-term and excessive alcohol consumption can exacerbate depressive symptoms.^[Ramsey, S.E., P.A. Engler, and M.D. Stein. “Alcohol Use Among Depressed Patients: The Need for Assessment and Intervention.” Prof. Psychol. Res. Pr. 36, no. 2 (2005): 203–7. https://doi.org/10.1037/0735-7028.36.2.203.] Furthermore, the relationship between alcohol consumption and depression has the potential for bidirectional causality, whereby depression may lead to increased alcohol consumption, and alcohol consumption may lead to worsening depression.^[Churchhill, S.A., and L. Farrell. “Alcohol and Depression: Evidence from the 2014 Health Survey for England.” Drug and Alcohol Depend. 180 (2017): 86–92. https://doi.org/https://doi.org/10.1016/j.drugalcdep.2017.08.006.]
+
+
+
+Understanding the interplay between alcohol consumption frequency and depression is crucial for developing effective prevention and intervention strategies. The National Survey on Drug Use and Health (NSDUH) is an authoritative data source that provides insights into substance use and mental health patterns among the adult population in the United States.^[“National Survey on Drug Use and Health (NSDUH).” Substance Abuse & Mental Health Data Archive. U.S. Department of Health & Human Services. Accessed May 17, 2023. https://www.datafiles.samhsa.gov/dataset/national-survey-drug-use-and-health-2015-nsduh-2015-ds0001#.] By analyzing the 2015 NSDUH dataset, this study aims to shed light on the correlation between alcohol consumption frequency and the incidence of major depression in adult populations, uncovering potential risk factors and implications for public health policy-making.
+
+The findings from this study may provide insights into the role of alcohol consumption frequency as a predictor for depression. Such knowledge can inform the development of interventions to reduce alcohol-related harm and improve mental health outcomes. Ultimately, a better understanding of the correlation between alcohol consumption frequency and depression may contribute to the well-being of adult populations, leading to improved quality of life for individuals and reduced burden on society as a whole.
+
+# 2. Data
+
+The data for this study was derived from the 2015 NSDUH dataset. The NSDUH is a comprehensive and nationally representative survey conducted annually by the Substance Abuse and Mental Health Services Administration in the United States. The NSDUH employs a multistage area probability sampling design to ensure the inclusion of diverse populations across all states. The sample for this study consisted of 2015 NSDUH participants aged 18 and older (n=39963). The final sample size was determined by the availability of data for measures of alcohol consumption frequency, depression, and demographic characteristics (n=5735).
+
+# 3. Methods
+
+**3.1 Measures**
+
+*3.1.1 Alcohol Consumption Frequency*
+
+The predictor of interest was past-year alcohol consumption frequency. This discrete variable measures the number of days (ranging 1-365) a participant reported consuming alcohol within the past 12 months.
+
+*3.1.2 Incidence of Major Depression*
+
+The outcome of interest was the past-year incidence of a major depressive episode (MDE). Participants who reported experiencing five or more MDE symptoms outlined in the the Diagnostic and Statistical Manual of Mental Disorders, 4th edition (DSM-IV), published by the American Psychiatric Association in 1994, including at least one core symptom (depressed mood or loss of interest in activities), within the past 12 months were assigned a value of 1 in the binary variable representing the past-year incidence of MDE; participants who did not meet these criteria were assigned a value of 0.
+
+*3.1.3 Demographic Characteristics*
+
+In addition to the alcohol consumption frequency and depression measures, we included binary variables for sex, race, marital status, education, and employment in our analysis. Sex  was coded as 1 for males and 0 for females. Race was coded as 1 for non-Hispanic whites and 0 for individuals of other racial backgrounds. Marital status was coded as 1 for married participants and 0 for those who were not married. Education was coded as 1 for participants who were college graduates and 0 for individuals with other educational backgrounds. Employment was coded as 1 for participants who had experienced at least one period of unemployment within the past year and 0 for those who were consistently employed throughout the year. 
+
+```{r table1}
+
+sum_tbl <- data %>% 
+  # Select variables to be summarized
+  select(Depression, Alcohol_Consumption_Frequency, Sex, Race, Marital_Status, Education, Employment) %>%
+  # Run skimr package
+  my_skim() %>% 
+  # Coerce to be a tibble (don't worry about it)
+  as_tibble() %>%
+  # Add proper variable descriptions
+  add_column(Variable = c("Incidence of Major Depression","Alcohol Consumption Frequency","Sex","Race","Marital Status","Education","Employment")) %>%
+  # Select summary statistics to report 
+  select(Variable, Observations, numeric.missing, numeric.mean, numeric.sd, numeric.p0, numeric.p100) %>%
+  # Round summary statistics to 3 digits
+  mutate_at(vars(-Variable), ~(round(., 2)))
+
+sum_tbl %>% 
+  # Filter factor variables
+  filter(!is.na(numeric.mean)) %>% 
+  # Select summary statistics you want to report
+  select(Variable, Observations, numeric.missing, numeric.mean, numeric.sd, numeric.p0, numeric.p100) %>%
+  kable(caption = "Summary Statistics",
+        col.names = c(
+          "Variable",
+          "Observations",
+          "N Missing",
+          "Mean",
+          "Std. Deviation",
+          "Min",
+          "Max"
+        ),
+        booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+\newpage
+
+**3.2 Analysis**
+
+```{=latex}
+$Incidence of Major Depression_i = \beta_0 + \beta_1 * Alcohol Consumption Frequency_i + \beta_2 * Sex_i + \beta_3 * Race_i + \beta_4 * Marital Status_i + \beta_5 * Education_i + \beta_6 * Employment_i$
+```
+
+The analysis was performed using R Statistical Software version 4.3.0.^[R Core Team. R: A Language and Environment for Statistical Computing (4.3.0). Vienna, Austria: R Foundation for Statistical Computing, 2023.] A multivariate logistic regression model was built to investigate the association between the outcome variable (past-year incidence of MDE) and the predictor variable of interest (past-year alcohol consumption frequency), while controlling for for the demographic characteristics mentioned earlier: sex, race, marital status, education, and employment.
+
+# 4. Results
+
+The results of the analysis are presented in Table 2. Regarding alcohol consumption frequency, the coefficient estimate was 0.0003117 (p = 0.762), indicating no significant association between alcohol consumption frequency and past-year incidence of MDE. However, four demographic characteristics were found to be significantly associated with the outcome. The coefficient estimate for gender was -0.7410298 (p < 0.001), suggesting that males had a lower likelihood of experiencing a past-year incidence of MDE compared to females The coefficient estimate for marital status was -0.5463956 (p < 0.001), indicating that married individuals had lower likelihood of experiencing a past-year incidence of MDE compared to those who were not married. The coefficient estimate for race was 0.4243935 (p < 0.001), indicating that individuals classified as non-Hispanic whites had a higher likelihood of experiencing a past-year incidence of MDE compared to individuals of other racial backgrounds. The coefficient estimate for employment was 0.7625039 (p < 0.001), indicating that individuals who had experienced at least one period of unemployment in the past year had a higher likelihood of experiencing a past-year incidence of MDE compared to those who were consistently employed throughout the year. Education was not significantly associated with the outcome.
+
+```{r regression, results='asis'}
+
+model <- glm(Depression ~ Alcohol_Consumption_Frequency + Sex + Race + Marital_Status + Education + Employment, data = data, family = binomial)
+
+stargazer(model,
+          type = "latex", 
+          header=FALSE,
+          title="Regression Results",
+          covariate.labels=c()
+          )
+
+```
